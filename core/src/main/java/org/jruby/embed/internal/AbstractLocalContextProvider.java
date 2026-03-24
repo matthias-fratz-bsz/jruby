@@ -75,12 +75,19 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
 
     boolean isGlobalRuntimeReady() { return Ruby.isGlobalRuntimeReady(); }
 
-    Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
-        if ( isGlobalRuntimeReady() ) {
-            return Ruby.getGlobalRuntime();
-        }
-        return Ruby.newInstance(provider.config);
-    }
+	Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
+		if (isGlobalRuntimeReady()) {
+			return Ruby.getGlobalRuntime();
+		}
+		// Ruby.newInstance() sets itself as the global runtime if the global runtime
+		// isn't yet set. so usually the global runtime will be whatever newInstace()
+		// returns
+		// however: if two newInstance() calls are running concurrently, the other one
+		// might win instead. in this case, Ruby.getGlobalRuntime() will always return
+		// the winning one
+		Ruby.newInstance(provider.config);
+		return Ruby.getGlobalRuntime();
+	}
 
     RubyInstanceConfig getGlobalRuntimeConfig(AbstractLocalContextProvider provider) {
         // make sure we do not yet initialize the runtime here
